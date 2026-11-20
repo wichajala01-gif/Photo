@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Photo Submission</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;padding:20px;
+  font-family:Arial,sans-serif;
+  background:#f1f5f9;color:#1e293b;
+}
+.container{
+  max-width:480px;margin:30px auto;
+  background:white;padding:22px;
+  border-radius:20px;text-align:center;
+  box-shadow:0 5px 25px #0001;
+}
+h2{margin-top:0}
+video,img{
+  width:100%;border-radius:14px;
+  background:#111;display:block;
+}
+img{display:none}
+button{
+  width:100%;padding:15px;margin-top:12px;
+  border:0;border-radius:12px;
+  font-size:16px;font-weight:bold;
+  background:#2563eb;color:white;
+}
+button.secondary{background:#64748b}
+#status{font-size:14px;color:#64748b;margin:15px 0}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>ส่งภาพกิจกรรม</h2>
+  <p>ถ่ายภาพเพื่อส่งงาน</p>
+
+  <video id="camera" autoplay muted playsinline></video>
+  <img id="preview" alt="ตัวอย่างภาพ">
+
+  <div id="status">กำลังเตรียมกล้อง...</div>
+
+  <button id="capture">ถ่ายภาพ</button>
+  <button id="retake" class="secondary" hidden>ถ่ายใหม่</button>
+  <button id="upload" hidden>ส่งภาพ</button>
+</div>
+
+<canvas id="canvas" hidden></canvas>
+
+<script>
+const video = document.getElementById('camera');
+const preview = document.getElementById('preview');
+const canvas = document.getElementById('canvas');
+const statusText = document.getElementById('status');
+
+let photoData = '';
+
+async function startCamera(){
+  try{
+    if(!navigator.mediaDevices?.getUserMedia){
+      throw new Error('เบราว์เซอร์ไม่รองรับการเปิดกล้อง');
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'}},
+      audio:false
+    });
+
+    video.srcObject = stream;
+    await video.play();
+    statusText.textContent = 'พร้อมถ่ายภาพ';
+  }catch(error){
+    statusText.textContent =
+      'เปิดกล้องไม่สำเร็จ: '+error.name+' - '+error.message;
+  }
+}
+
+document.getElementById('capture').onclick = ()=>{
+  if(!video.videoWidth){
+    statusText.textContent = 'กล้องยังไม่พร้อม';
+    return;
+  }
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(
+    video,0,0,canvas.width,canvas.height
+  );
+
+  photoData = canvas.toDataURL('image/jpeg',0.75);
+  preview.src = photoData;
+  preview.style.display = 'block';
+  video.style.display = 'none';
+
+  document.getElementById('capture').hidden = true;
+  document.getElementById('retake').hidden = false;
+  document.getElementById('upload').hidden = false;
+  statusText.textContent = 'ตรวจสอบภาพก่อนส่ง';
+};
+
+document.getElementById('retake').onclick = ()=>{
+  preview.style.display = 'none';
+  video.style.display = 'block';
+  photoData = '';
+
+  document.getElementById('capture').hidden = false;
+  document.getElementById('retake').hidden = true;
+  document.getElementById('upload').hidden = true;
+  statusText.textContent = 'พร้อมถ่ายภาพ';
+};
+
+document.getElementById('upload').onclick = ()=>{
+  statusText.textContent =
+    'ระบบบันทึกภาพจะเชื่อมต่อในขั้นตอนถัดไป';
+};
+  
+startCamera();
+</script>
+</body>
+</html>
